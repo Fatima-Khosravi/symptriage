@@ -1,3 +1,52 @@
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
+# Serve a simple HTML page
+@app.get("/chat", response_class=HTMLResponse)
+def chat_page():
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>SympTriage Chat</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            #conversation { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
+            input[type=text] { width: 300px; padding: 5px; }
+            button { padding: 5px 10px; }
+        </style>
+    </head>
+    <body>
+        <h2>SympTriage Chat</h2>
+        <div id="conversation"></div>
+        <input type="text" id="user_input" placeholder="Type your symptom..." />
+        <button onclick="sendMessage()">Send</button>
+
+        <script>
+            async function sendMessage() {
+                let inputBox = document.getElementById('user_input');
+                let msg = inputBox.value.trim();
+                if(!msg) return;
+
+                let convo = document.getElementById('conversation');
+                convo.innerHTML += `<b>You:</b> ${msg}<br>`;
+                inputBox.value = '';
+
+                let response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_inputs: [msg] })
+                });
+
+                let data = await response.json();
+                convo.innerHTML += `<b>SympTriage:</b> ${JSON.stringify(data, null, 2)}<br><br>`;
+                convo.scrollTop = convo.scrollHeight;
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 import os
 from fastapi import FastAPI
 from pydantic import BaseModel
